@@ -118,6 +118,25 @@ class VendorTransaction(Base):
         )
 
 
+class FakeMerchants(Base):
+    """
+    FakeMerchants model representing a fake merchants categorizations in the database.
+    """
+
+    __tablename__ = "fake_merchants"
+
+    id: Mapped[UUID[str]] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, unique=True
+    )
+    category: Mapped[str] = mapped_column(String(100))
+    merchant: Mapped[str] = mapped_column(String(100))
+
+    def __repr__(self):
+        return (
+            f"<FakeMerchants(id={self.id}, category={self.category}, merchant={self.merchant})>"
+        )
+
+
 def fake_client() -> Client:
     """
     Generate a fake client using Faker.
@@ -213,6 +232,27 @@ def fake_vendor_transactions(client: Client, quantity: int) -> List[VendorTransa
     return list(sorted(transactions, key=lambda x: x.transaction_date))
 
 
+def fake_merchants_categorization() -> List[FakeMerchants]:
+    """
+    Append fake merchants categorizations.
+    """
+    fake_merchants: List[FakeMerchants] = []
+
+    with open('fake_merchants.json', 'r') as file:
+        file_data = json.loads(file.read())
+
+    for category, merchants in dict(file_data).items():
+        for merchant in merchants:
+            fake_merchants.append(
+                FakeMerchants(
+                    category=category,
+                    merchant=merchant
+                )
+            )
+
+    return fake_merchants
+
+
 if __name__ == "__main__":
     fake = Faker()
 
@@ -256,6 +296,11 @@ if __name__ == "__main__":
     cash_flows.sort(key=lambda x: x.scheduled_date)
     for cash_flow in cash_flows:
         session.add(cash_flow)
+    session.commit()
+
+    fake_merchants: List[FakeMerchants] = fake_merchants_categorization()
+    for fake_merchant in fake_merchants:
+        session.add(fake_merchant)
     session.commit()
 
 print("[bold green]Fake data generated successfully!:rocket-emoji:")
